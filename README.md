@@ -1,0 +1,9 @@
+# Wikigraph's server
+## About
+Have you ever wanted to measure the arbitrary distance between 2 things? Do you want to become the best at [Wikipedia Speedruns](https://wikispeedruns.com/)? Well look no further.
+Wikigraph is a pathfinder service that computes the number of links it takes to get from 1 Wikipedia article to another using a compressed binary graph (inspired by [Tristan Hume](https://github.com/trishume/wikicrush))
+
+This repo contains the code to run and deploy the Wikigraph Pathfinding microservice (which also contains a rate limiter microservice because I'm broke and aws is expensive). 
+It exposes a rest api via the rate limiter, which communicates with the pathfinder service via gRPC + ProtoBuf. I wrote the rate limiter myself and it's an implementation of the [Token Bucket Algo](https://en.wikipedia.org/wiki/Token_bucket) using Redis.
+The Pathfinder currently runs the A* pathfinding algoritihim implemented in Go and traverses the binary graph created in this [repository](https://github.com/notzree/wikigraph_script)
+
