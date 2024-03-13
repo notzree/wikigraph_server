@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"database/sql"
+
+	g "github.com/notzree/wikigraph_server/graph"
 )
 
 type PathFinder interface {
@@ -10,8 +12,8 @@ type PathFinder interface {
 }
 
 type WikigraphPathFinder struct {
-	graph_path string
-	db         *sql.DB
+	graph *g.Wikigraph
+	db    *sql.DB
 }
 
 func (w *WikigraphPathFinder) FindPath(ctx context.Context, from, to string) ([]string, error) {
