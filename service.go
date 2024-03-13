@@ -10,7 +10,7 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-type Service interface {
+type Servicer interface {
 	Serve(w http.ResponseWriter, r *http.Request)
 }
 type RateLimitedService struct {
