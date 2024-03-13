@@ -10,6 +10,8 @@ import (
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 	c "github.com/notzree/wikigraph_server/client"
+	w "github.com/notzree/wikigraph_server/database"
+	g "github.com/notzree/wikigraph_server/graph"
 	proto "github.com/notzree/wikigraph_server/proto"
 	"github.com/redis/go-redis/v9"
 )
@@ -17,6 +19,28 @@ import (
 const MAX_REQ_PER_HOUR = 10
 
 func main() {
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
+	db_url := os.Getenv("DATABASE_URL")
+	conn, err := sql.Open("postgres", db_url)
+	if err != nil {
+		panic(err)
+	}
+	defer conn.Close()
+	// graph := g.MustCreateNewWikigraph("simplewiki_binary_graph.bin")
+	lookupHandler := w.NewWikigraphLookupHandler(conn)
+
+	result, err := lookupHandler.LookupByOffset(16)
+	if err != nil {
+		panic(err)
+	}
+	log.Println(result)
+
+}
+
+func main2() {
 
 	err := godotenv.Load()
 	if err != nil {
@@ -51,8 +75,8 @@ func main() {
 		log.Println("Path from A to B:", r.Paths)
 
 	}()
-
-	pf := &WikigraphPathFinder{graph_path: "data/graph.txt", db: conn}
+	graph := g.MustCreateNewWikigraph("simplewiki_binary_graph.bin")
+	pf := &WikigraphPathFinder{graph: graph, db: conn}
 
 	//start pathfinder grpc service (grpc)
 	go BuildAndRunGRPCServer(pf, pf_port)
