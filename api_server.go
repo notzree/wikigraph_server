@@ -7,16 +7,16 @@ import (
 
 type ApiServer struct {
 	address  string
-	services map[string]Service // Map paths to services
+	services map[string]Servicer // Map paths to services
 }
 
 func NewApiServer(address string) *ApiServer {
 	return &ApiServer{
 		address:  address,
-		services: make(map[string]Service),
+		services: make(map[string]Servicer),
 	}
 }
-func (server *ApiServer) RegisterService(path string, service Service) {
+func (server *ApiServer) RegisterService(path string, service Servicer) {
 	server.services[path] = service
 }
 
