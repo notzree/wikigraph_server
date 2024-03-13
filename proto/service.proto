@@ -1,2 +1,16 @@
 syntax = "proto3";
-package main
+
+option go_package = "github.com/notzree/wikigraph_server/proto";
+
+service PathFinder {
+  rpc FindPath(PathRequest) returns (PathResponse);
+}
+
+message PathRequest {
+  string from = 1;
+  string to = 2;
+}
+
+message PathResponse {
+  repeated string paths = 1;
+}
