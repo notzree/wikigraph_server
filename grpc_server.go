@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"log"
 	"net"
 
 	"github.com/notzree/wikigraph_server/proto"
@@ -18,6 +19,7 @@ func BuildAndRunGRPCServer(svc PathFinder, listenAddr string) error {
 	opts := []grpc.ServerOption{}
 	server := grpc.NewServer(opts...)
 	proto.RegisterPathFinderServer(server, grpcPathFinder)
+	log.Println("Starting gRPC server at", listenAddr)
 	return server.Serve(ln)
 
 }
