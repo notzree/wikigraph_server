@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"net"
 	"net/http"
 	"strings"
@@ -14,18 +13,15 @@ import (
 type Service interface {
 	Serve(w http.ResponseWriter, r *http.Request)
 }
-
 type RateLimitedService struct {
-	svc         Service
 	rdsClient   *redis.Client
 	ctx         context.Context
 	duration    int64
 	maxRequests int64
 }
 
-func NewRateLimitedService(svc Service, rdsClient *redis.Client, ctx context.Context, duration int64, maxRequests int64) *RateLimitedService {
+func NewRateLimitedService(rdsClient *redis.Client, ctx context.Context, duration int64, maxRequests int64) *RateLimitedService {
 	return &RateLimitedService{
-		svc:         svc,
 		rdsClient:   rdsClient,
 		ctx:         ctx,
 		duration:    duration,
@@ -79,14 +75,14 @@ func (rls *RateLimitedService) Serve(w http.ResponseWriter, r *http.Request) {
 		rls.rdsClient.Set(rls.ctx, resetKey, now, time.Duration(rls.duration)*time.Second)
 		rls.rdsClient.Set(rls.ctx, tokenKey, newTokens-1, time.Duration(rls.duration)*time.Second)
 	}
-
-	rls.svc.Serve(w, r)
-}
-
-type ExampleService struct{}
-
-func (svc *ExampleService) Serve(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Hello, world!")
+	query := r.URL.Query()
+	startPath := query.Get("start_path")
+	endPath := query.Get("end_path")
+	if startPath == "" || endPath == "" {
+		http.Error(w, "Missing start_path or end_path parameter", http.StatusBadRequest)
+		return
+	}
+	//forward call to gRPC service
 }
 
 func getIpAddress(r *http.Request) string {
