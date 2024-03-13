@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	"log"
 	"net/http"
 )
 
@@ -28,6 +28,6 @@ func (server *ApiServer) Start() error {
 			localService.Serve(w, r)
 		})
 	}
-	fmt.Println("Server starting on", server.address)
+	log.Println("Server starting on port", server.address)
 	return http.ListenAndServe(server.address, nil)
 }
