@@ -1,19 +1,17 @@
-FROM golang:1.18-alpine
+FROM golang:1.20-alpine
 
 RUN apk add --no-cache make protobuf
 
 WORKDIR /wikigraph_server
 
-COPY go.mod go.sum ./
+COPY . .
 
 RUN go mod download
 
 RUN make build
 
-RUN make run
-
 EXPOSE 3000
 
 EXPOSE 8080
 
-CMD [ "/wikigraph_server"]
+CMD [ "make", "run"]
