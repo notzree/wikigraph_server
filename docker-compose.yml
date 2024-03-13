@@ -1,0 +1,14 @@
+version: '3.9'
+services:
+  wikigraph_server:
+    env_file:
+      - .env
+    container_name: wikigraph_server
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    environment:
+      - DATABASE_URL=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      - UPSTASH_URL=${UPSTASH_URL}
+      - RATE_LIMITER_PORT=${RATE_LIMITER_PORT}
+      - PATH_FINDER_PORT=${PATH_FINDER_PORT}
