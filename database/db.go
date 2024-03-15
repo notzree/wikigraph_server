@@ -1,9 +1,13 @@
 package database
 
-import "database/sql"
+import (
+	"database/sql"
+)
 
 type LookupHandler interface {
 	LookupByOffset(offset int32) (string, error)
+	LookupByTitle(title string) (int32, error)
+	CompleteString(prefix string) ([]string, error)
 }
 
 type WikigraphLookupHandler struct {
@@ -21,4 +25,12 @@ func (w *WikigraphLookupHandler) LookupByOffset(offset int32) (string, error) {
 		return "", err
 	}
 	return title, nil
+}
+func (w *WikigraphLookupHandler) LookupByTitle(title string) (int32, error) {
+	var byteoffset int
+	err := w.db.QueryRow("SELECT byteoffset FROM lookup WHERE title = $1", title).Scan(&byteoffset)
+	if err != nil {
+		return -1, err
+	}
+	return int32(byteoffset), nil
 }
