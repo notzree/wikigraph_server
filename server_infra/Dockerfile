@@ -8,10 +8,9 @@ COPY . .
 
 RUN go mod download
 
-# RUN make build
+RUN make build
 
-# EXPOSE 3000
+EXPOSE 3001
 
-# EXPOSE 8080
 
-# CMD [ "make", "run"]
+CMD [ "make", "run"]

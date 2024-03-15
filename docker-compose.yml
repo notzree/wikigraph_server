@@ -19,7 +19,7 @@ services:
     stdin_open: true
     tty: true
     ports:
-      - ${RATE_LIMITER_PORT}
+      - 3001:3001
     build:
       context: ./
       dockerfile: Dockerfile
