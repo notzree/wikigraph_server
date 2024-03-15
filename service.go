@@ -2,11 +2,13 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"net"
 	"net/http"
 	"strings"
 	"time"
 
+	"github.com/notzree/wikigraph_server/proto"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -16,14 +18,16 @@ type Servicer interface {
 type RateLimitedService struct {
 	rdsClient   *redis.Client
 	ctx         context.Context
+	grpcClient  proto.PathFinderClient
 	duration    int64
 	maxRequests int64
 }
 
-func NewRateLimitedService(rdsClient *redis.Client, ctx context.Context, duration int64, maxRequests int64) *RateLimitedService {
+func NewRateLimitedService(rdsClient *redis.Client, ctx context.Context, grpcClient proto.PathFinderClient, duration int64, maxRequests int64) *RateLimitedService {
 	return &RateLimitedService{
 		rdsClient:   rdsClient,
 		ctx:         ctx,
+		grpcClient:  grpcClient,
 		duration:    duration,
 		maxRequests: maxRequests,
 	}
@@ -83,6 +87,23 @@ func (rls *RateLimitedService) Serve(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	//forward call to gRPC service
+	resp, err := rls.grpcClient.FindPath(rls.ctx, &proto.PathRequest{From: startPath, To: endPath})
+	if err != nil {
+		http.Error(w, "Internal error", http.StatusInternalServerError)
+		return
+	}
+	err = writeJSON(w, http.StatusOK, resp)
+	if err != nil {
+		http.Error(w, "Internal error", http.StatusInternalServerError)
+		return
+	}
+
+	//Need a json serializer
+
+}
+func writeJSON(w http.ResponseWriter, s int, v any) error {
+	w.WriteHeader(s)
+	return json.NewEncoder(w).Encode(v)
 }
 
 func getIpAddress(r *http.Request) string {
