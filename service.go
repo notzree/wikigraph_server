@@ -79,7 +79,7 @@ func (rls *RateLimitedService) Serve(w http.ResponseWriter, r *http.Request) {
 	rls.svc.Serve(w, r)
 }
 
-// Basically have the rate limiter service call the pathfinder service,  the rls should not contain grpc clients or any implementaiton other than rate limiting.
+// Wrapper for pathfinder client
 type PathFinderService struct {
 	grpcClient proto.PathFinderClient
 	ctx        context.Context
@@ -99,6 +99,35 @@ func (pfs *PathFinderService) Serve(w http.ResponseWriter, r *http.Request) {
 	}
 	//forward call to gRPC server
 	resp, err := pfs.grpcClient.FindPath(pfs.ctx, &proto.PathRequest{From: startPath, To: endPath})
+	if err != nil {
+		http.Error(w, "Internal error", http.StatusInternalServerError)
+		return
+	}
+	err = writeJSON(w, http.StatusOK, resp)
+	if err != nil {
+		http.Error(w, "Internal error", http.StatusInternalServerError)
+		return
+	}
+}
+
+// wrapper for autocomplete client
+type AutoCompleteService struct {
+	grpcClient proto.AutoCompleteClient
+	ctx        context.Context
+}
+
+func NewAutoCompleterService(grpcClient proto.AutoCompleteClient, ctx context.Context) *AutoCompleteService {
+	return &AutoCompleteService{grpcClient: grpcClient, ctx: ctx}
+}
+func (acs *AutoCompleteService) Serve(w http.ResponseWriter, r *http.Request) {
+	query := r.URL.Query()
+	prefix := query.Get("prefix")
+	if prefix == "" {
+		http.Error(w, "Missing prefix parameter", http.StatusBadRequest)
+		return
+	}
+	//forward call to gRPC server
+	resp, err := acs.grpcClient.Complete(acs.ctx, &proto.CompleteRequest{Prefix: prefix})
 	if err != nil {
 		http.Error(w, "Internal error", http.StatusInternalServerError)
 		return

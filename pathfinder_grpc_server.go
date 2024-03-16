@@ -9,21 +9,6 @@ import (
 	"google.golang.org/grpc"
 )
 
-func BuildAndRunGRPCServer(svc PathFinder, listenAddr string) error {
-	grpcPathFinder := NewGRPCPathFinderServer(svc)
-
-	ln, err := net.Listen("tcp", listenAddr)
-	if err != nil {
-		return err
-	}
-	opts := []grpc.ServerOption{}
-	server := grpc.NewServer(opts...)
-	proto.RegisterPathFinderServer(server, grpcPathFinder)
-	log.Println("Starting gRPC server at", listenAddr)
-	return server.Serve(ln)
-
-}
-
 type GRPCPathFinderServer struct {
 	svc PathFinder
 	proto.UnimplementedPathFinderServer
@@ -33,6 +18,20 @@ func NewGRPCPathFinderServer(svc PathFinder) *GRPCPathFinderServer {
 	return &GRPCPathFinderServer{
 		svc: svc,
 	}
+}
+
+func BuildAndRunPathFinderServer(svc PathFinder, listenAddr string) error {
+	grpcPathFinder := NewGRPCPathFinderServer(svc)
+
+	ln, err := net.Listen("tcp", listenAddr)
+	if err != nil {
+		return err
+	}
+	opts := []grpc.ServerOption{}
+	server := grpc.NewServer(opts...)
+	proto.RegisterPathFinderServer(server, grpcPathFinder)
+	log.Println("Starting gRPC PathFinder server at", listenAddr)
+	return server.Serve(ln)
 }
 
 func (pf *GRPCPathFinderServer) FindPath(ctx context.Context, req *proto.PathRequest) (*proto.PathResponse, error) {

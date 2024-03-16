@@ -1,17 +1,31 @@
 package main
 
 import (
-	d "github.com/notzree/wikigraph_server/database"
+	"context"
+	"database/sql"
 )
 
 type AutoCompleter interface {
-	AutoComplete(prefix string) ([]string, error)
+	Complete(ctx context.Context, prefix string) ([]string, error)
 }
 
 type WikigraphAutoCompleter struct {
-	db d.LookupHandler
+	db *sql.DB
 }
 
-func (w *WikigraphAutoCompleter) AutoComplete(prefix string) ([]string, error) {
-	return w.db.CompleteString(prefix)
+func (w *WikigraphAutoCompleter) Complete(ctx context.Context, prefix string) ([]string, error) {
+	rows, err := w.db.Query(`SELECT title FROM lookup WHERE title % $1 ORDER BY ORDER BY LENGTH(title) DESC LIMIT 10;`, prefix)
+	if err != nil {
+		return nil, err
+	}
+	var titles []string
+	for rows.Next() {
+		var title string
+		err = rows.Scan(&title)
+		if err != nil {
+			return nil, err
+		}
+		titles = append(titles, title)
+	}
+	return titles, nil
 }

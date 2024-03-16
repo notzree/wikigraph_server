@@ -9,7 +9,6 @@ import (
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 	c "github.com/notzree/wikigraph_server/client"
-	w "github.com/notzree/wikigraph_server/database"
 	g "github.com/notzree/wikigraph_server/graph"
 	"github.com/redis/go-redis/v9"
 )
@@ -17,6 +16,7 @@ import (
 const MAX_REQ_PER_HOUR = 60
 
 func main() {
+	// setup environment
 	err := godotenv.Load()
 	if err != nil {
 		log.Fatal("Error loading .env file")
@@ -27,36 +27,47 @@ func main() {
 		client  = redis.NewClient(opt)
 		rl_port = os.Getenv("RATE_LIMITER_PORT")
 		pf_port = os.Getenv("PATH_FINDER_PORT")
+		ac_port = os.Getenv("AUTO_COMPLETER_PORT")
 		db_url  = os.Getenv("DATABASE_URL")
 	)
 
+	// open DB connection
 	conn, err := sql.Open("postgres", db_url)
 	if err != nil {
 		panic(err)
 	}
 	defer conn.Close()
 
-	grpcClient, err := c.NewGRPCPathFinderClient(pf_port)
+	//Create pathfinder dependencies
+	graph := g.MustCreateNewWikigraph("wikipedia_binary_graph.bin")
+	pf := &WikigraphPathFinder{graph: *graph, db: conn}
+	go BuildAndRunPathFinderServer(pf, pf_port)
+
+	pf_client, err := c.NewGRPCPathFinderClient(pf_port)
 	if err != nil {
 		log.Fatal("Failed to connect to grpc server:", err)
 	}
+	pfs := NewPathFinderService(pf_client, ctx)
 
+	//Create AutoCompleter dependencies
+	ac := &WikigraphAutoCompleter{db: conn}
+	go BuildAndRunAutoCompleteServer(ac, ac_port)
+
+	ac_client, err := c.NewGRPCAutoCompleterClient(ac_port)
+	if err != nil {
+		log.Fatal("Failed to connect to grpc server:", err)
+	}
+	acs := NewAutoCompleterService(ac_client, ctx)
+
+	//Rate limit requests
 	var (
-		graph         = g.MustCreateNewWikigraph("wikipedia_binary_graph.bin")
-		lookupHandler = w.NewWikigraphLookupHandler(conn)
-		pf            = &WikigraphPathFinder{graph: *graph, lookupHandler: lookupHandler}
-		pfs           = NewPathFinderService(grpcClient, ctx)
-	)
-	go BuildAndRunGRPCServer(pf, pf_port)
-
-	//start rate_limiter service (json)
-	var (
-		rate_limited_pf   = NewRateLimitedService(client, ctx, pfs, 60, MAX_REQ_PER_HOUR)
-		rate_limit_server = NewRestApiServer(rl_port)
+		rl_pfs          = NewRateLimitedService(client, ctx, pfs, 60, MAX_REQ_PER_HOUR)
+		rest_api_server = NewRestApiServer(rl_port)
 	)
 
-	rate_limit_server.RegisterService("/find_path", rate_limited_pf)
-	if err := rate_limit_server.Start(); err != nil {
+	rest_api_server.RegisterService("/find_path", rl_pfs)
+	rest_api_server.RegisterService("/complete", acs)
+	if err := rest_api_server.Start(); err != nil {
 		log.Fatal("Failed to start server:", err)
 	}
 }

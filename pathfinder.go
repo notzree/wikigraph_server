@@ -2,8 +2,8 @@ package main
 
 import (
 	"context"
+	"database/sql"
 
-	db "github.com/notzree/wikigraph_server/database"
 	g "github.com/notzree/wikigraph_server/graph"
 )
 
@@ -12,17 +12,17 @@ type PathFinder interface {
 }
 
 type WikigraphPathFinder struct {
-	graph         g.Wikigraph
-	lookupHandler db.LookupHandler
+	graph g.Wikigraph
+	db    *sql.DB
 }
 
 func (w *WikigraphPathFinder) FindPath(ctx context.Context, from, to string) ([]string, error) {
 
-	from_bytes, err := w.lookupHandler.LookupByTitle(from)
+	from_bytes, err := w.LookupByTitle(from)
 	if err != nil {
 		return nil, err
 	}
-	to_bytes, err := w.lookupHandler.LookupByTitle(to)
+	to_bytes, err := w.LookupByTitle(to)
 	if err != nil {
 		return nil, err
 	}
@@ -33,7 +33,7 @@ func (w *WikigraphPathFinder) FindPath(ctx context.Context, from, to string) ([]
 		return nil, err
 	}
 	for i, byte_offset := range byte_array {
-		title, err := w.lookupHandler.LookupByOffset(byte_offset)
+		title, err := w.LookupByOffset(byte_offset)
 		if err != nil {
 			return nil, err
 		}
@@ -41,4 +41,21 @@ func (w *WikigraphPathFinder) FindPath(ctx context.Context, from, to string) ([]
 	}
 	return path, nil
 
+}
+func (w *WikigraphPathFinder) LookupByOffset(offset int32) (string, error) {
+	var title string
+	err := w.db.QueryRow("SELECT title FROM lookup WHERE byteoffset = $1", offset).Scan(&title)
+	if err != nil {
+		return "", err
+	}
+	return title, nil
+}
+
+func (w *WikigraphPathFinder) LookupByTitle(title string) (int32, error) {
+	var byteoffset int
+	err := w.db.QueryRow("SELECT byteoffset FROM lookup WHERE title = $1", title).Scan(&byteoffset)
+	if err != nil {
+		return -1, err
+	}
+	return int32(byteoffset), nil
 }
