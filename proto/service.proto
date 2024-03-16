@@ -14,3 +14,16 @@ message PathRequest {
 message PathResponse {
   repeated string paths = 1;
 }
+
+service AutoComplete {
+  rpc Complete(CompleteRequest) returns (CompleteResponse);
+}
+
+message CompleteRequest {
+  string prefix = 1;
+}
+
+message CompleteResponse {
+  repeated string completions = 1;
+}
+
