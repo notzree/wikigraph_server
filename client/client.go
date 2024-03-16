@@ -5,7 +5,7 @@ import (
 	"google.golang.org/grpc"
 )
 
-func NewGRPCClient(remoteAddr string) (proto.PathFinderClient, error) {
+func NewGRPCPathFinderClient(remoteAddr string) (proto.PathFinderClient, error) {
 	conn, err := grpc.Dial(remoteAddr, grpc.WithInsecure())
 	if err != nil {
 		return nil, err
