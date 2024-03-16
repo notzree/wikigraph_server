@@ -67,7 +67,8 @@ func main() {
 
 	rest_api_server.RegisterService("/find_path", rl_pfs)
 	rest_api_server.RegisterService("/complete", acs)
-	if err := rest_api_server.Start(); err != nil {
+	err = rest_api_server.Start()
+	if err != nil {
 		log.Fatal("Failed to start server:", err)
 	}
 }

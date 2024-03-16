@@ -14,7 +14,7 @@ type WikigraphAutoCompleter struct {
 }
 
 func (w *WikigraphAutoCompleter) Complete(ctx context.Context, prefix string) ([]string, error) {
-	rows, err := w.db.Query(`SELECT title FROM lookup WHERE title % $1 ORDER BY ORDER BY LENGTH(title) DESC LIMIT 10;`, prefix)
+	rows, err := w.db.Query(`SELECT title FROM lookup WHERE title % $1 LIMIT 10;`, prefix)
 	if err != nil {
 		return nil, err
 	}

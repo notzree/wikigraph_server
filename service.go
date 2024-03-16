@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/notzree/wikigraph_server/proto"
@@ -91,8 +92,8 @@ func NewPathFinderService(grpcClient proto.PathFinderClient, ctx context.Context
 
 func (pfs *PathFinderService) Serve(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
-	startPath := query.Get("start_path")
-	endPath := query.Get("end_path")
+	startPath := strings.TrimSpace(query.Get("start_path"))
+	endPath := strings.TrimSpace(query.Get("end_path"))
 	if startPath == "" || endPath == "" {
 		http.Error(w, "Missing start_path or end_path parameter", http.StatusBadRequest)
 		return
@@ -121,7 +122,7 @@ func NewAutoCompleterService(grpcClient proto.AutoCompleteClient, ctx context.Co
 }
 func (acs *AutoCompleteService) Serve(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
-	prefix := query.Get("prefix")
+	prefix := strings.TrimSpace(query.Get("prefix"))
 	if prefix == "" {
 		http.Error(w, "Missing prefix parameter", http.StatusBadRequest)
 		return
