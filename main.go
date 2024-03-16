@@ -14,21 +14,7 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-const MAX_REQ_PER_HOUR = 10
-
-// func main() {
-// 	graph := g.MustCreateNewWikigraph("simplewiki_binary_graph.bin")
-// 	start_bytes := int32(9332)  //atom
-// 	end_bytes := int32(2857212) //fingre
-// 	// log.Println(graph.GetLinks(start_bytes))
-// 	// log.Println(graph.GetLinks(end_bytes))
-// 	res, err := graph.FindPath(start_bytes, end_bytes)
-// 	if err != nil {
-// 		log.Fatal(err)
-// 	}
-// 	log.Println("Path from atom to google:", res)
-
-// }
+const MAX_REQ_PER_HOUR = 60
 
 func main() {
 	err := godotenv.Load()
@@ -50,34 +36,25 @@ func main() {
 	}
 	defer conn.Close()
 
-	grpcClient, err := c.NewGRPCClient(":8080")
+	grpcClient, err := c.NewGRPCPathFinderClient(pf_port)
 	if err != nil {
 		log.Fatal("Failed to connect to grpc server:", err)
 	}
 
-	// go func() {
-	// 	time.Sleep(5 * time.Second)
-	// 	r, err := grpcClient.FindPath(ctx, &proto.PathRequest{From: "A", To: "B"})
-	// 	if err != nil {
-	// 		log.Fatal("Failed to find path:", err)
-	// 	}
-	// 	log.Println("Path from A to B:", r.Paths)
-
-	// }()
-	//start pathfinder grpc service (grpc)
 	var (
-		graph         = g.MustCreateNewWikigraph("simplewiki_binary_graph.bin")
+		graph         = g.MustCreateNewWikigraph("wikipedia_binary_graph.bin")
 		lookupHandler = w.NewWikigraphLookupHandler(conn)
 		pf            = &WikigraphPathFinder{graph: *graph, lookupHandler: lookupHandler}
+		pfs           = NewPathFinderService(grpcClient, ctx)
 	)
 	go BuildAndRunGRPCServer(pf, pf_port)
 
 	//start rate_limiter service (json)
 	var (
-		rate_limited_pf = NewRateLimitedService(client, ctx, grpcClient, 60, MAX_REQ_PER_HOUR)
-
-		rate_limit_server = NewApiServer(rl_port)
+		rate_limited_pf   = NewRateLimitedService(client, ctx, pfs, 60, MAX_REQ_PER_HOUR)
+		rate_limit_server = NewRestApiServer(rl_port)
 	)
+
 	rate_limit_server.RegisterService("/find_path", rate_limited_pf)
 	if err := rate_limit_server.Start(); err != nil {
 		log.Fatal("Failed to start server:", err)
