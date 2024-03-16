@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"log"
 
 	db "github.com/notzree/wikigraph_server/database"
 	g "github.com/notzree/wikigraph_server/graph"
@@ -23,12 +22,10 @@ func (w *WikigraphPathFinder) FindPath(ctx context.Context, from, to string) ([]
 	if err != nil {
 		return nil, err
 	}
-	log.Println("from_bytes", from_bytes)
 	to_bytes, err := w.lookupHandler.LookupByTitle(to)
 	if err != nil {
 		return nil, err
 	}
-	log.Println("to_bytes", to_bytes)
 
 	byte_array, err := w.graph.FindPath(int32(from_bytes), int32(to_bytes))
 	path := make([]string, len(byte_array))
