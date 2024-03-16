@@ -8,6 +8,9 @@ services:
       - 5432:5432
     volumes:
       - ~/apps/postgres:/var/lib/postgresql/data
+    build:
+      context: ./
+      dockerfile: ./database_infra/Dockerfile
     environment:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_USER=${POSTGRES_USER}
@@ -22,7 +25,7 @@ services:
       - 3001:3001
     build:
       context: ./
-      dockerfile: Dockerfile
+      dockerfile: ./server_infra/Dockerfile
     environment:
       - DATABASE_URL=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable
       - UPSTASH_URL=${UPSTASH_URL}
