@@ -34,3 +34,20 @@ func (w *WikigraphLookupHandler) LookupByTitle(title string) (int32, error) {
 	}
 	return int32(byteoffset), nil
 }
+
+func (w *WikigraphLookupHandler) CompleteString(prefix string) ([]string, error) {
+	rows, err := w.db.Query(`SELECT name FROM products WHERE name % $1 ORDER BY similarity(name, $1) DESC LIMIT 10;`, prefix)
+	if err != nil {
+		return nil, err
+	}
+	var titles []string
+	for rows.Next() {
+		var title string
+		err = rows.Scan(&title)
+		if err != nil {
+			return nil, err
+		}
+		titles = append(titles, title)
+	}
+	return titles, nil
+}

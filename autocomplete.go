@@ -11,3 +11,7 @@ type AutoCompleter interface {
 type WikigraphAutoCompleter struct {
 	db d.LookupHandler
 }
+
+func (w *WikigraphAutoCompleter) AutoComplete(prefix string) ([]string, error) {
+	return w.db.CompleteString(prefix)
+}
