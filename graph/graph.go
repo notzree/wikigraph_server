@@ -52,16 +52,15 @@ func (w *Wikigraph) GetLinks(bo int32) []int32 {
 
 // Findpath returns the shortest path from "from" to "to". "from" and "to" are byte offsets into the array (which represent nodes).
 func (w *Wikigraph) FindPath(start, target int32) ([]int32, error) {
-	parents := make([]int32, w.pageCount) //predecessor array. The index should not be a byteoffset, but the index
-	for i := range parents {
-		parents[i] = -1
-	}
-	visited := make([]bool, w.pageCount)
+	// parents := make([]int32, w.pageCount) // Predecessor array. The index should not be a byte offset, but the index.
+	//The map is more efficeint by leaps and bounds but currently is broken, need to fix.
+	parents := make(map[int32]int32)
 	queue := make([]int32, 0)
 	queue = append(queue, start)
-	visited[to_i(start)] = true
+	parents[to_i(start)] = start
+
 	for len(queue) > 0 {
-		current_node := queue[0] //node is a byteoffset
+		current_node := queue[0] // node is a byte offset
 		queue = queue[1:]
 		if current_node == 0 {
 			continue
@@ -74,24 +73,24 @@ func (w *Wikigraph) FindPath(start, target int32) ([]int32, error) {
 				continue
 			}
 			link := to_i(link_byte_offset)
-			if !visited[link] { //unvisited
-				visited[link] = true
-				parents[link] = to_i(current_node)      //mark as visited and mark predecessor
-				queue = append(queue, link_byte_offset) //add the bo to queue as GetLinks takes in byteoffsets
+			if _, ok := parents[link]; !ok { // Unvisited
+				parents[link] = to_i(current_node)      // Mark as visited and mark predecessor
+				queue = append(queue, link_byte_offset) // Add the byte offset to queue as GetLinks takes in byte offsets.
 			}
 		}
 	}
 
 	var path []int32
 
-	for v := to_i(target); v != -1; v = parents[v] {
-		path = append(path, v*4) //return byteoffsets
-		if v == start {
+	// Construct path. Note that path will be constructed in reverse: from target to start.
+	for v := to_i(target); v != -1 && parents[v] != -1; v = parents[v] { // Check parents[v] != -1 for safety.
+		println(v * 4)
+		path = append(path, v*4) // Return byte offsets
+		if v*4 == start {
 			break
 		}
 	}
 	reverse(path)
-
 	return path, nil
 }
 
