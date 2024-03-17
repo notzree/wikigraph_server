@@ -2,11 +2,11 @@ package main
 
 import (
 	"context"
+	"log"
 	"net/http"
 	"strings"
 	"time"
 
-	"github.com/notzree/wikigraph_server/proto"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -40,6 +40,7 @@ func (rls *RateLimitedService) Serve(w http.ResponseWriter, r *http.Request) {
 	// Check if the reset key exists to determine if it's a new period or existing user
 	exists, err := rls.rdsClient.Exists(rls.ctx, resetKey).Result()
 	if err != nil {
+		log.Println("Error:", err)
 		http.Error(w, "Internal error", http.StatusInternalServerError)
 		return
 	}
@@ -54,11 +55,13 @@ func (rls *RateLimitedService) Serve(w http.ResponseWriter, r *http.Request) {
 		// Existing user: fetch prev req time and counter
 		prevRequestTime, err := rls.rdsClient.Get(rls.ctx, resetKey).Int64()
 		if err != nil {
+			log.Println("Error:", err)
 			http.Error(w, "Internal error", http.StatusInternalServerError)
 			return
 		}
 		prevTokens, err := rls.rdsClient.Get(rls.ctx, tokenKey).Int64()
 		if err != nil {
+			log.Println("Error:", err)
 			http.Error(w, "Internal error", http.StatusInternalServerError)
 			return
 		}
@@ -82,12 +85,12 @@ func (rls *RateLimitedService) Serve(w http.ResponseWriter, r *http.Request) {
 
 // Wrapper for pathfinder client
 type PathFinderService struct {
-	grpcClient proto.PathFinderClient
-	ctx        context.Context
+	pf  PathFinder
+	ctx context.Context
 }
 
-func NewPathFinderService(grpcClient proto.PathFinderClient, ctx context.Context) *PathFinderService {
-	return &PathFinderService{grpcClient: grpcClient, ctx: ctx}
+func NewPathFinderService(pf PathFinder, ctx context.Context) *PathFinderService {
+	return &PathFinderService{pf: pf, ctx: ctx}
 }
 
 func (pfs *PathFinderService) Serve(w http.ResponseWriter, r *http.Request) {
@@ -99,26 +102,30 @@ func (pfs *PathFinderService) Serve(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	//forward call to gRPC server
-	resp, err := pfs.grpcClient.FindPath(pfs.ctx, &proto.PathRequest{From: startPath, To: endPath})
+
+	res, err := pfs.pf.FindPath(pfs.ctx, startPath, endPath)
 	if err != nil {
+		log.Println("Error:", err)
 		http.Error(w, "Internal error", http.StatusInternalServerError)
 		return
 	}
-	err = writeJSON(w, http.StatusOK, resp)
+	err = writeJSON(w, http.StatusOK, res)
 	if err != nil {
+		log.Println("Error:", err)
 		http.Error(w, "Internal error", http.StatusInternalServerError)
 		return
 	}
+
 }
 
 // wrapper for autocomplete client
 type AutoCompleteService struct {
-	grpcClient proto.AutoCompleteClient
-	ctx        context.Context
+	ac  AutoCompleter
+	ctx context.Context
 }
 
-func NewAutoCompleterService(grpcClient proto.AutoCompleteClient, ctx context.Context) *AutoCompleteService {
-	return &AutoCompleteService{grpcClient: grpcClient, ctx: ctx}
+func NewAutoCompleterService(ac AutoCompleter, ctx context.Context) *AutoCompleteService {
+	return &AutoCompleteService{ac: ac, ctx: ctx}
 }
 func (acs *AutoCompleteService) Serve(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
@@ -128,14 +135,17 @@ func (acs *AutoCompleteService) Serve(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	//forward call to gRPC server
-	resp, err := acs.grpcClient.Complete(acs.ctx, &proto.CompleteRequest{Prefix: prefix})
+	res, err := acs.ac.Complete(acs.ctx, prefix)
 	if err != nil {
+		log.Println("Error:", err)
 		http.Error(w, "Internal error", http.StatusInternalServerError)
 		return
 	}
-	err = writeJSON(w, http.StatusOK, resp)
+	err = writeJSON(w, http.StatusOK, res)
 	if err != nil {
+		log.Println("Error:", err)
 		http.Error(w, "Internal error", http.StatusInternalServerError)
 		return
 	}
+
 }
