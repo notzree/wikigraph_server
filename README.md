@@ -11,6 +11,5 @@ Photo of it working
 <img width="1184" alt="image" src="https://github.com/notzree/wikigraph_server/assets/118649285/f882e24e-6b74-4e8a-9729-4ba59d17ad70">
 
 todo: 
-- figure out deployment of database (weird because I used diesel as the orm on the script in rust, maybe just dump it and recreate from dump during build)
-- Add the pg_tgrm extension to make autocomplete possible 
+- optimize the graph struct to reduce mem usage
 
