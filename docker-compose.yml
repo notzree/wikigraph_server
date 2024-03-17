@@ -4,7 +4,7 @@ services:
     env_file:
       - ./.env
     image: notzree/wikigraph_database:1.0
-    platform: linux/amd64
+    platform: linux/arm64
     build:
       context: ./
       dockerfile: ./database_infra/Dockerfile
@@ -14,7 +14,7 @@ services:
       - ~/apps/postgres:/var/lib/postgresql/data
       - ./database_infra/:/docker-entrypoint-initdb.d
   server:
-    image: notzree/wikigraph_server:1.0
+    image: notzree/wikigraph_server:2.0
     platform: linux/amd64
     env_file:
       - ./.env
