@@ -8,9 +8,9 @@ It exposes a rest api via the rate limiter, which communicates with the pathfind
 The Pathfinder currently runs a BFS implemented in Go and traverses the binary graph created in this [repository](https://github.com/notzree/wikigraph_script). It's able to compute the shortest path between 2 wikipedia pages sub millisecond
 
 Photo of it working
-<img width="1184" alt="image" src="https://github.com/notzree/wikigraph_server/assets/118649285/f882e24e-6b74-4e8a-9729-4ba59d17ad70">
+<img width="843" alt="image" src="https://github.com/notzree/wikigraph_server/assets/118649285/5ca36f44-2823-444d-a518-b5b5730adbdb">
+
 
 todo: 
-- figure out deployment of database (weird because I used diesel as the orm on the script in rust, maybe just dump it and recreate from dump during build)
-- Add the pg_tgrm extension to make autocomplete possible 
+- optimize the graph struct to reduce mem usage
 
