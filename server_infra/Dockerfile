@@ -1,4 +1,4 @@
-FROM golang:1.20-alpine
+FROM golang:1.22-alpine
 
 RUN apk add --no-cache make protobuf
 
@@ -10,7 +10,7 @@ RUN go mod download
 
 RUN make build
 
-EXPOSE 3001
+EXPOSE 8080
 
 
 CMD [ "make", "run"]
