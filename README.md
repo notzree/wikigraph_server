@@ -1,20 +1,54 @@
-# Wikigraph's server
-## About
-Have you ever wanted to measure the arbitrary distance between 2 things? Do you want to become the best at [Wikipedia Speedruns](https://wikispeedruns.com/)? Well look no further.
-Wikigraph is a pathfinder service that computes the number of links it takes to get from 1 Wikipedia article to another using a compressed binary graph (inspired by [Tristan Hume](https://github.com/trishume/wikicrush))
+<div align = "center">
+<pre>
+__        _____ _  _____ ____ ____      _    ____  _   _
+\ \      / /_ _| |/ /_ _/ ___|  _ \    / \  |  _ \| | | |
+ \ \ /\ / / | || ' / | | |  _| |_) |  / _ \ | |_) | |_| |
+  \ V  V /  | || . \ | | |_| |  _ <  / ___ \|  __/|  _  |
+   \_/\_/  |___|_|\_\___\____|_| \_\/_/   \_\_|   |_| |_|
+  -------------------------------------------------------
+  Golang API server to become the #1 wikipedia speedrunner
+</pre>
+    
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-This repo contains the code to run and deploy the Wikigraph Pathfinding microservice (which also contains a rate limiter microservice because I'm broke and aws is expensive). 
-It exposes a rest api via the rate limiter, which communicates with the pathfinder service via gRPC + ProtoBuf. (still need to break down grpc and rest apis separately)
+</div>
 
-I wrote the rate limiter myself and it's an implementation of the [Token Bucket Algo](https://en.wikipedia.org/wiki/Token_bucket) using Redis.
-The Pathfinder currently runs a BFS implemented in Go and traverses the binary graph created in this [repository](https://github.com/notzree/wikigraph_script). It's able to compute the shortest path between 2 wikipedia pages ~ 1 second with the database and everything running on my local machine. See the deployment section where I talk about real-world performance.
+Ever wanted to cheat in your Wikipedia speedruns?
+Try Wikigraph, an API to tell you the shortest distance between (almost) any 2 articles on wikipedia.
+Outdated data? Create a fresh copy yourself using [wikigraph_script](https://github.com/notzree/wikigraph_script)
 
-## Using the API
-//todo: add some docs
-## Deployment 
-I ran into multiple issues with excessive memory usage. My first initial prototype running the 2 gRPC services + the database was taking around 3.5-4 Gbs of ram. In an attmept to lower my costs, I moved the database onto supabase (excellent free tier) and then removed the gRPC service entirely and just utilized a rest api. 
+# quick links
 
-After lots of profiling + code optimizations, I lowered my memory usage from 3.5gbs to 1.4 gbs. Due to these cost-saving mechanisms, the actual latency of the API is around 2-4 seconds depending on the query.
+- [Installation](#installation)
+- [Usage example](#usage-example)
+
+  
+## Installation
+Make sure you have docker installed and working. \
+Clone this repo
+```sh
+git clone something 
+```
+Download the Binary graph or create it (see below)
+Google drive link: [Graph Link](https://drive.google.com/file/d/1GDBSYfmq6aJpdc_6L5Q5RVJDWMi0vTiK/view?usp=sharing) \
+Be sure to move it to the root of the git repo
+```sh
+mv downloads/wikipedia_binary_graph.bin /path_to_git_repo/wikigraph
+```
+Build with docker, this will setup all the database stuff and run the server on port 80.
+```sh
+docker-compose build && docker-compose up
+```
+## Usage example
+
+
+## Implementation details
+
+## Caveats 
+
+## Create your own wikigraph
+
+
 
 
 
