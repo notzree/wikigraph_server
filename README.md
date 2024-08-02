@@ -6,7 +6,7 @@ __        _____ _  _____ ____ ____      _    ____  _   _
   \ V  V /  | || . \ | | |_| |  _ <  / ___ \|  __/|  _  |
    \_/\_/  |___|_|\_\___\____|_| \_\/_/   \_\_|   |_| |_|
   -------------------------------------------------------
-  Golang API server to become the #1 wikipedia speedrunner
+  Golang API server to search wikipedia link graph
 </pre>
     
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
