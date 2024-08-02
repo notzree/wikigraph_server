@@ -1,16 +1,56 @@
-# Wikigraph's server
-## About
-Have you ever wanted to measure the arbitrary distance between 2 things? Do you want to become the best at [Wikipedia Speedruns](https://wikispeedruns.com/)? Well look no further.
-Wikigraph is a pathfinder service that computes the number of links it takes to get from 1 Wikipedia article to another using a compressed binary graph (inspired by [Tristan Hume](https://github.com/trishume/wikicrush))
+<div align = "center">
+<pre>
+__        _____ _  _____ ____ ____      _    ____  _   _
+\ \      / /_ _| |/ /_ _/ ___|  _ \    / \  |  _ \| | | |
+ \ \ /\ / / | || ' / | | |  _| |_) |  / _ \ | |_) | |_| |
+  \ V  V /  | || . \ | | |_| |  _ <  / ___ \|  __/|  _  |
+   \_/\_/  |___|_|\_\___\____|_| \_\/_/   \_\_|   |_| |_|
+  -------------------------------------------------------
+  Golang API server to become the #1 wikipedia speedrunner
+</pre>
+    
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-This repo contains the code to run and deploy the Wikigraph Pathfinding microservice (which also contains a rate limiter microservice because I'm broke and aws is expensive). 
-It exposes a rest api via the rate limiter, which communicates with the pathfinder service via gRPC + ProtoBuf. I wrote the rate limiter myself and it's an implementation of the [Token Bucket Algo](https://en.wikipedia.org/wiki/Token_bucket) using Redis.
-The Pathfinder currently runs a BFS implemented in Go and traverses the binary graph created in this [repository](https://github.com/notzree/wikigraph_script). It's able to compute the shortest path between 2 wikipedia pages sub millisecond
+</div>
 
-Photo of it working
-<img width="843" alt="image" src="https://github.com/notzree/wikigraph_server/assets/118649285/5ca36f44-2823-444d-a518-b5b5730adbdb">
+Ever wanted to cheat in your Wikipedia speedruns?
+Try Wikigraph, an API to tell you the shortest distance between (almost) any 2 articles on wikipedia.
+Outdated data? Create a fresh copy yourself using [wikigraph_script](https://github.com/notzree/wikigraph_script)
+
+# quick links
+
+- [Installation](#installation)
+- [Usage example](#usage-example)
+
+  
+## Installation
+Make sure you have docker installed and working. \
+Clone this repo
+```sh
+git clone something 
+```
+Download the Binary graph or create it (see below)
+Google drive link: [Graph Link](https://drive.google.com/file/d/1GDBSYfmq6aJpdc_6L5Q5RVJDWMi0vTiK/view?usp=sharing) \
+Be sure to move it to the root of the git repo
+```sh
+mv downloads/wikipedia_binary_graph.bin /path_to_git_repo/wikigraph
+```
+Build with docker, this will setup all the database stuff and run the server on port 80.
+```sh
+docker-compose build && docker-compose up
+```
+## Usage example
 
 
-todo: 
-- optimize the graph struct to reduce mem usage
+## Implementation details
+
+## Caveats 
+
+## Create your own wikigraph
+
+
+
+
+
+
 
