@@ -1,16 +1,24 @@
-FROM golang:1.22-alpine
+# Use the official Golang image as the base image
+FROM golang:1.22.3-alpine
 
-RUN apk add --no-cache make protobuf
+# Install reflex for hot reloading
+RUN apk add --no-cache git
+RUN go install github.com/cespare/reflex@latest
 
-WORKDIR /wikigraph_server
+# Set the working directory inside the container
+WORKDIR /app
 
-COPY . .
+# Copy the Go module files
+COPY go.mod go.sum ./
 
+# Download the Go module dependencies
 RUN go mod download
 
-RUN make build
+# Copy the rest of the application code
+COPY . .
 
+# Expose the application on port 8080
 EXPOSE 8080
 
-
-CMD [ "make", "run"]
+# Command to run reflex for hot reloading
+CMD ["reflex", "-r", "\\.go$", "-s", "--", "go", "run", ".", "-race"]

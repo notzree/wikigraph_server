@@ -2,7 +2,7 @@ package graph
 
 import (
 	"encoding/binary"
-	"errors"
+	"log"
 	"os"
 	"sync"
 )
@@ -55,7 +55,7 @@ func (w *Wikigraph) FindPathSequential(start, target int32) ([]int32, error) {
 		return []int32{start}, nil
 	}
 	parents := make(map[int32]int32)
-	queue := make([]int32, 0)
+	queue := make([]int32, 0, len(w.graph)/2)
 	queue = append(queue, start)
 	parents[to_i(start)] = to_i(start)
 
@@ -79,16 +79,7 @@ func (w *Wikigraph) FindPathSequential(start, target int32) ([]int32, error) {
 			}
 		}
 	}
-
-	var path []int32
-
-	// Construct path. Note that path will be constructed in reverse: from target to start.
-	for v := to_i(target); v != -1 && parents[v] != -1; v = parents[v] { // Check parents[v] != -1 for safety.
-		path = append(path, v*4) // Return byte offsets
-		if v*4 == start {
-			break
-		}
-	}
+	path := w.ConstructPath(start, target, parents)
 	reverse(path)
 	return path, nil
 }
@@ -97,15 +88,21 @@ func (w *Wikigraph) FindPathConcurrent(start, target int32) ([]int32, error) {
 	if start == target {
 		return []int32{start}, nil
 	}
+	// parents are used by respective goroutines to keep track of their internal predecessors
 	startParents := make(map[int32]int32)
-	startParents[to_i(start)] = start
-
+	startParents[to_i(start)] = to_i(start)
 	targetParents := make(map[int32]int32)
-	targetParents[to_i(target)] = target
+	targetParents[to_i(target)] = to_i(start)
+	// discovered is a buffered chan of size 1 uesd to communicate discovered nodes to the orchestrating goroutine.
+	discovered := make(chan int32, 1)
+
+	startQueue := make([]int32, 0, len(w.graph)/2)
+	startQueue = append(startQueue, start)
+	targetQueue := make([]int32, 0, len(w.graph)/2)
+	targetQueue = append(targetQueue, target)
 	var wg sync.WaitGroup
 	closeSignal := make(chan struct{})
-	startQueue := make(chan int32)  // byte offset
-	targetQueue := make(chan int32) // byte offset
+	resultChan := make(chan int32)
 
 	wg.Add(2)
 	//from start searching for target
@@ -113,7 +110,8 @@ func (w *Wikigraph) FindPathConcurrent(start, target int32) ([]int32, error) {
 		searchTarget: target,
 		parents:      startParents,
 		closeSignal:  closeSignal,
-		nodeQueue:    startQueue,
+		queue:        startQueue,
+		discovered:   discovered,
 		wg:           &wg,
 	})
 	//from target searching for start
@@ -121,79 +119,81 @@ func (w *Wikigraph) FindPathConcurrent(start, target int32) ([]int32, error) {
 		searchTarget: start,
 		parents:      targetParents,
 		closeSignal:  closeSignal,
-		nodeQueue:    targetQueue,
+		queue:        targetQueue,
+		discovered:   discovered,
 		wg:           &wg,
 	})
 
 	go func() {
-		for {
-			select {
-			case current_node_offset := <-startQueue: //Bfs searching from start found a node_offset
-				//If this node's index is in the target's parents, we have found the path
-				if _, ok := targetParents[to_i(current_node_offset)]; ok {
-					closeSignal <- struct{}{}
-					starting_path := w.ConstructPath(start, current_node_offset, startParents) //path from currentNode -> start
-					reverse(starting_path)                                                     // path from start -> currentNode
-					target_path := w.ConstructPath(target, current_node_offset, targetParents) //path from currentNode -> target
-					return append(starting_path, target_path...)
-				}
-			case node_offset := <-targetQueue: //Bfs searching from target found a node_offset
-				//If this node's index is in the start's parents, we have found the path
-				if _, ok := startParents[to_i(node_offset)]; ok {
-					closeSignal <- struct{}{}
-					//todo: construct path
-					return
-				}
-
+		discoveredNodes := make(map[int32]bool)
+		for node := range discovered {
+			if _, ok := discoveredNodes[node]; ok {
+				close(closeSignal)
+				resultChan <- node
+				return
 			}
+			discoveredNodes[node] = true
 		}
 	}()
-	startQueue <- start
-	targetQueue <- target
+
 	wg.Wait()
-	return nil, errors.New("no path found")
+	//middle is the middle value that both start and target know how to reach
+	middle := <-resultChan
+	//all goroutines are closed so can access maps safely
+	startPath := w.ConstructPath(start, middle, startParents) //middle -> start
+	reverse(startPath)                                        // start -> middle
+	//remove the middle node
+	startPath = startPath[:len(startPath)-1]
+	targetPath := w.ConstructPath(target, middle, targetParents) // middle -> target
+
+	//join the two paths
+	return append(startPath, targetPath...), nil
 }
 
 type BfsParams struct {
 	searchTarget int32 //byte offset
 	parents      map[int32]int32
 	closeSignal  chan struct{}
-	nodeQueue    chan int32
+	queue        []int32
+	discovered   chan int32
 	wg           *sync.WaitGroup
 }
 
 func (w *Wikigraph) bfs(params BfsParams) {
 	defer params.wg.Done()
-	for {
-		select {
-		case <-params.closeSignal:
-			return
-		case current_node_offset := <-params.nodeQueue:
-			if current_node_offset == params.searchTarget {
-				return
-			}
-			if current_node_offset == 0 {
+	for len(params.queue) > 0 {
+		current_node_offset := params.queue[0]
+		params.queue = params.queue[1:]
+		if current_node_offset == 0 {
+			continue
+		}
+		if current_node_offset == params.searchTarget {
+			params.discovered <- current_node_offset
+		}
+		for _, link_byte_offset := range w.GetLinks(current_node_offset) {
+			if link_byte_offset == 0 {
 				continue
 			}
-			for _, link_byte_offset := range w.GetLinks(current_node_offset) {
-				if link_byte_offset == 0 {
-					continue
-				}
-				link := to_i(link_byte_offset)
-				if _, ok := params.parents[link]; !ok {
-					params.parents[link] = to_i(current_node_offset)
-					params.nodeQueue <- link_byte_offset
+			link := to_i(link_byte_offset)
+			if _, ok := params.parents[link]; !ok { //communicate undiscovered nodes to the orchestrating goroutine
+				params.parents[link] = to_i(current_node_offset)
+				params.queue = append(params.queue, link_byte_offset)
+				select {
+				case params.discovered <- link_byte_offset:
+				case <-params.closeSignal:
+					return
 				}
 			}
-
 		}
+
 	}
+	log.Default().Println("Queue is empty")
 }
 
 // Constructs the path from finish -> start using the parents map * NOT REVERSED *
 // start and finish are byte offsets
 func (w *Wikigraph) ConstructPath(start int32, finish int32, parents map[int32]int32) []int32 {
-	path := make([]int32, len(parents)/2)
+	path := make([]int32, 0)
 	for v := to_i(finish); v != -1 && parents[v] != -1; v = parents[v] { // Check parents[v] != -1 for safety.
 		path = append(path, v*4) // Return byte offsets
 		if v*4 == start {
@@ -209,12 +209,23 @@ func (w *Wikigraph) Peek(i int32) []int32 {
 	return peek
 }
 
+func to_i(byte_offset int32) int32 {
+	return byte_offset / 4
+}
+
 func reverse(s []int32) { //reminder to self that slices are passed by reference
 	for i, j := 0, len(s)-1; i < j; i, j = i+1, j-1 {
 		s[i], s[j] = s[j], s[i]
 	}
+}
 
-}
-func to_i(byte_offset int32) int32 {
-	return byte_offset / 4
-}
+// Summary of new approach:
+
+// Each bfs goroutine will send newly discovered nodes to the 3rd goroutine.
+//This goroutine will keep a record of all nodes discovered by both bfs goroutines.
+//If a node is discovered by both bfs goroutines, then it will signal to both goroutines to stop, it will then exit.
+//the main goroutine will be listening for the map of parents from both bfs goroutines on a channel
+
+//each bfs goroutine will be creating it's own map of parents. When the signal to stop is received,
+//it will send this parent map back on the channel. The main goroutine will use a select statement to listen for both maps
+// It will then construct the paths and join them.

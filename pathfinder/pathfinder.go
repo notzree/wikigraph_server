@@ -34,7 +34,6 @@ func (w *WikiPathFinder) FindPathSequential(ctx context.Context, from, to string
 	if err != nil {
 		return nil, err
 	}
-
 	byte_array, err := w.graph.FindPathSequential(int32(from_bytes), int32(to_bytes))
 	path := make([]string, len(byte_array))
 	if err != nil {
@@ -80,8 +79,7 @@ func (w *WikiPathFinder) FindPathConcurrent(ctx context.Context, from, to string
 	if err != nil {
 		return nil, err
 	}
-
-	byte_array, err := w.graph.FindPathSequential(int32(from_bytes), int32(to_bytes))
+	byte_array, err := w.graph.FindPathConcurrent(int32(from_bytes), int32(to_bytes))
 	path := make([]string, len(byte_array))
 	if err != nil {
 		return nil, err
