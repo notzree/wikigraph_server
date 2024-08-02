@@ -27,12 +27,10 @@ func NewWikiPathFinder(graph g.Wikigraph, db *sql.DB) *WikiPathFinder {
 func (w *WikiPathFinder) FindPathSequential(ctx context.Context, from, to string) ([]string, error) {
 
 	from_bytes, err := w.LookupByTitle(from)
-	log.Default().Print(from_bytes)
 	if err != nil {
 		return nil, err
 	}
 	to_bytes, err := w.LookupByTitle(to)
-	log.Default().Print(to_bytes)
 	if err != nil {
 		return nil, err
 	}
