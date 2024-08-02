@@ -21,7 +21,9 @@ services:
     stdin_open: true
     tty: true
     ports:
-      - 3001:3001
+      - 8080:8080
+    volumes:
+      - .:/app
     build:
       context: ./
       dockerfile: ./server_infra/Dockerfile
