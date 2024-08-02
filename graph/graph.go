@@ -58,7 +58,7 @@ func (w *Wikigraph) FindPathSequential(start, target int32) ([]int32, error) {
 	queue := make([]int32, 0, len(w.graph)/2)
 	queue = append(queue, start)
 	parents[to_i(start)] = to_i(start)
-
+	pathFound := false
 	for len(queue) > 0 {
 		current_node := queue[0] // node is a byte offset
 		queue = queue[1:]
@@ -66,6 +66,7 @@ func (w *Wikigraph) FindPathSequential(start, target int32) ([]int32, error) {
 			continue
 		}
 		if current_node == target {
+			pathFound = true
 			break
 		}
 		for _, link_byte_offset := range w.GetLinks(current_node) {
@@ -78,6 +79,9 @@ func (w *Wikigraph) FindPathSequential(start, target int32) ([]int32, error) {
 				queue = append(queue, link_byte_offset) // Add the byte offset to queue as GetLinks takes in byte offsets.
 			}
 		}
+	}
+	if !pathFound {
+		return []int32{}, nil
 	}
 	path := w.ConstructPath(start, target, parents)
 	reverse(path)
@@ -210,6 +214,9 @@ func (w *Wikigraph) Peek(i int32) []int32 {
 }
 
 func to_i(byte_offset int32) int32 {
+	if byte_offset == 0 {
+		return 0
+	}
 	return byte_offset / 4
 }
 

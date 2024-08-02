@@ -34,7 +34,7 @@ func main() {
 
 	sequential_wikigraph := graph.MustCreateNewWikigraph("wikipedia_binary_graph.bin")
 
-	sequential_pathfinder := pathfinder.NewSequentialPathFinder(
+	sequential_pathfinder := pathfinder.NewWikiPathFinder(
 		*sequential_wikigraph, conn,
 	)
 	server := server.NewServer(*sequential_pathfinder, pf_port)

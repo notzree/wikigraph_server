@@ -17,7 +17,7 @@ type WikiPathFinder struct {
 	db    *sql.DB
 }
 
-func NewSequentialPathFinder(graph g.Wikigraph, db *sql.DB) *WikiPathFinder {
+func NewWikiPathFinder(graph g.Wikigraph, db *sql.DB) *WikiPathFinder {
 	return &WikiPathFinder{
 		graph: graph,
 		db:    db,
