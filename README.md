@@ -17,7 +17,7 @@ Ever wanted to cheat in your Wikipedia speedruns?
 Try Wikigraph, an API to tell you the shortest distance between (almost) any 2 articles on wikipedia.
 Outdated data? Create a fresh copy yourself using [wikigraph_script](https://github.com/notzree/wikigraph_script)
 
-# recruiters pls click on these
+# Skip to:
 
 - [performance](#Benchmarks)
 - [implementation detail](#Implementation-details)
