@@ -3,7 +3,9 @@ package pathfinder
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"log"
+	"strings"
 
 	g "github.com/notzree/wikigraph_server/graph"
 )
@@ -35,28 +37,52 @@ func (w *WikiPathFinder) FindPathSequential(ctx context.Context, from, to string
 		return nil, err
 	}
 	byte_array, err := w.graph.FindPathSequential(int32(from_bytes), int32(to_bytes))
-	path := make([]string, len(byte_array))
 	if err != nil {
 		return nil, err
 	}
-	for i, byte_offset := range byte_array {
-		title, err := w.LookupByOffset(byte_offset)
-		if err != nil {
-			return nil, err
-		}
-		path[i] = title
+	path, err := w.LookupByOffset(byte_array)
+	if err != nil {
+		return nil, err
 	}
 	return path, nil
+
 }
 
-func (w *WikiPathFinder) LookupByOffset(offset int32) (string, error) {
-	var title string
-	err := w.db.QueryRow("SELECT title FROM lookup WHERE byteoffset = $1", offset).Scan(&title)
-	if err != nil {
-		log.Println("lookupbyoffset error for :", offset, "err:", err)
-		return "", err
+func (w *WikiPathFinder) LookupByOffset(offsets []int32) ([]string, error) {
+	byteToTitle := make(map[int32]string)
+	placeholders := make([]string, len(offsets))
+	args := make([]interface{}, len(offsets))
+	paths := make([]string, len(offsets))
+
+	for i, offset := range offsets {
+		placeholders[i] = fmt.Sprintf("$%d", i+1)
+		args[i] = offset
 	}
-	return title, nil
+	query := fmt.Sprintf("SELECT byteoffset, title FROM lookup WHERE byteoffset IN (%s)", strings.Join(placeholders, ", "))
+	rows, err := w.db.Query(query, args...)
+	if err != nil {
+		log.Println("lookupbyoffset error for :", offsets, "err:", err)
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var byteOffset int32
+		var title string
+		if err := rows.Scan(&byteOffset, &title); err != nil {
+			log.Printf("Scan failed: %v", err)
+			continue
+		}
+		byteToTitle[byteOffset] = title
+	}
+
+	if err := rows.Err(); err != nil {
+		log.Fatalf("Row iteration error: %v", err)
+	}
+
+	for i, byte := range offsets {
+		paths[i] = byteToTitle[byte]
+	}
+	return paths, nil
 }
 
 func (w *WikiPathFinder) LookupByTitle(title string) (int32, error) {
@@ -80,16 +106,13 @@ func (w *WikiPathFinder) FindPathConcurrent(ctx context.Context, from, to string
 		return nil, err
 	}
 	byte_array, err := w.graph.FindPathConcurrent(int32(from_bytes), int32(to_bytes))
-	path := make([]string, len(byte_array))
+
 	if err != nil {
 		return nil, err
 	}
-	for i, byte_offset := range byte_array {
-		title, err := w.LookupByOffset(byte_offset)
-		if err != nil {
-			return nil, err
-		}
-		path[i] = title
+	path, err := w.LookupByOffset(byte_array)
+	if err != nil {
+		return nil, err
 	}
 	return path, nil
 }
