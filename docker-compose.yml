@@ -1,39 +1,13 @@
-version: '3.9'
 services:
-  postgres:
-    env_file:
-      - .env
-    image: postgres:14-alpine
-    ports:
-      - 5432:5432
-    volumes:
-      - ~/apps/postgres:/var/lib/postgresql/data
-      - ./database_infra/:/docker-entrypoint-initdb.d
-    environment:
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_DB=${POSTGRES_DB}
   server:
     image: notzree/wikigraph_server:1.0
     env_file:
       - .env
     container_name: wikigraph_server
-    stdin_open: true
-    tty: true
     ports:
       - 8080:8080
-    volumes:
-      - .:/app
     build:
       context: ./
-      dockerfile: ./server_infra/Dockerfile
+      dockerfile: ./server_infra/prod.Dockerfile
     environment:
-      - DATABASE_URL=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable
-      - UPSTASH_URL=${UPSTASH_URL}
-      - RATE_LIMITER_PORT=${RATE_LIMITER_PORT}
-      - PATH_FINDER_PORT=${PATH_FINDER_PORT}
-      - AUTO_COMPLETER_PORT=${AUTO_COMPLETER_PORT}
-    depends_on:
-      - postgres
-volumes:
-  postgres:
+      - DATABASE_URL=${SUPABASE_URL}
