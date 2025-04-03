@@ -12,6 +12,7 @@ __        _____ _  _____ ____ ____      _    ____  _   _
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 </div>
+Try it out: https://wikigraph-client.vercel.app/
 
 Ever wanted to cheat in your Wikipedia speedruns?
 Try Wikigraph, an API to tell you the shortest distance between (almost) any 2 articles on wikipedia.
