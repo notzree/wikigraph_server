@@ -45,19 +45,20 @@ func EnableCORS(next http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
-// Modify your Make function to wrap handlers with CORS
-func Make(handler ApiHandlerFunc) http.HandlerFunc {
+func Make(handler ApiHandlerFunc, isProtected bool) http.HandlerFunc {
 	return EnableCORS(func(w http.ResponseWriter, r *http.Request) {
 		// Check for authorization token
-		token := r.Header.Get("Authorization")
-		if token == "" {
-			errResp := map[string]any{
-				"statusCode": http.StatusUnauthorized,
-				"msg":        "unauthorized: missing authorization token",
+		if isProtected {
+			token := r.Header.Get("Authorization")
+			if token == "" {
+				errResp := map[string]any{
+					"statusCode": http.StatusUnauthorized,
+					"msg":        "unauthorized: missing authorization token",
+				}
+				writeJSON(w, http.StatusUnauthorized, errResp)
+				log.Println("HTTP API error", "err", "missing authorization token", "path", r.URL.Path)
+				return
 			}
-			writeJSON(w, http.StatusUnauthorized, errResp)
-			log.Println("HTTP API error", "err", "missing authorization token", "path", r.URL.Path)
-			return
 		}
 
 		// Process the request with the handler if token is present

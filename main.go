@@ -23,8 +23,8 @@ func main() {
 	var (
 		pf_port = ":8080"
 		db_url  = os.Getenv("DATABASE_URL")
-		cert    = os.Getenv("CERTIFICATE_PATH")
-		key     = os.Getenv("KEY_PATH")
+		// cert    = os.Getenv("CERTIFICATE_PATH")
+		// key     = os.Getenv("KEY_PATH")
 	)
 
 	// open DB connection
@@ -40,6 +40,6 @@ func main() {
 		*sequential_wikigraph, conn,
 	)
 	server := server.NewServer(*sequential_pathfinder, pf_port)
-	log.Fatal(server.ServeHTTPS(cert, key))
+	log.Fatal(server.Serve())
 
 }
