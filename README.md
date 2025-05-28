@@ -28,7 +28,7 @@ Outdated data? Create a fresh copy yourself using [wikigraph_script](https://git
 Make sure you have docker installed and working. \
 Clone this repo
 ```sh
-git clone something
+git clone https://github.com/notzree/wikigraph_server.git
 ```
 Download the Binary graph or create it (see below)
 Google drive link: [Graph Link](https://drive.google.com/file/d/1GDBSYfmq6aJpdc_6L5Q5RVJDWMi0vTiK/view?usp=sharing) \
